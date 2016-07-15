@@ -1,17 +1,18 @@
 package services.dao;
 
-import java.util.ArrayList;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.servlet.ServletException;
 
-import org.bson.Document;
-
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.MongoClientURI;
 
 import services.beans.Departamento;
 import services.beans.Distrito;
@@ -85,57 +86,71 @@ public class PaisDAO {
 	}
 	
 	public void cargaMongo(int id) throws ServletException{
-		MongoClient mongoClient = new MongoClient( "mongodb://ivan:sistemas2@ds011903.mlab.com:11903");
-		MongoDatabase database = mongoClient.getDatabase("peru20133037");
-		
-		MongoCollection<Document> colPaises = database.getCollection("paises");
-		MongoCollection<Document> colDepartamentos = database.getCollection("departamentos");
-		MongoCollection<Document> colProvincias = database.getCollection("provincias");
-		MongoCollection<Document> colDistritos = database.getCollection("distritos");
-		
-		List<Departamento> departamentosMySQL=new DepartamentoDAO(em).listaFiltro(id);
-		List<Provincia> provinciasMySQL;
-		List<Distrito> distritosMySQL;
+		MongoClientURI uri = new MongoClientURI("mongodb://root:root@ds036638.mlab.com:36638/paises20133037");
+		MongoClient mongoClient;
+		try {
+			mongoClient = new MongoClient(uri);
+			DB db = mongoClient.getDB("paises20133037");
 			
-		Document docDepartamento;
-		Document docProvincia;
-		Document docDistrito;
-		
-		for(Departamento depa : departamentosMySQL){
-			docDepartamento=new Document("id", depa.getId())
-					.append("nombre", depa.getNombre())
-					.append("pais_id", depa.getPais().getId());				
+			DBCollection colPaises = db.getCollection("paises");
+			DBCollection colDepartamentos = db.getCollection("departamentos");
+			DBCollection colProvincias = db.getCollection("provincias");
+			DBCollection colDistritos = db.getCollection("distritos");
 			
-			provinciasMySQL=new ProvinciaDAO(em).listaFiltro(depa.getId());
-			for(Provincia prov : provinciasMySQL){
-				docProvincia=new Document("id", prov.getId())
-						.append("departamento_id", prov.getDepartamento().getId())
-						.append("nombre", prov.getNombre());				
+			List<Departamento> departamentosMySQL=new DepartamentoDAO(em).listaFiltro(id);
+			List<Provincia> provinciasMySQL;
+			List<Distrito> distritosMySQL;
+			
+			for(Departamento depa : departamentosMySQL){						
 				
-				distritosMySQL=new DistritoDAO(em).listaFiltro(prov.getId());
-				for(Distrito dist : distritosMySQL){
-					docDistrito=new Document("id", dist.getId())
-							.append("provincia_id", dist.getProvincia().getId())
-							.append("nombre", dist.getNombre())
-							.append("poblacion", dist.getPoblacion());
-					colDistritos.insertOne(docDistrito);
+				provinciasMySQL=new ProvinciaDAO(em).listaFiltro(depa.getId());
+				for(Provincia prov : provinciasMySQL){							
 					
+					distritosMySQL=new DistritoDAO(em).listaFiltro(prov.getId());				
+					for(Distrito dist : distritosMySQL){
+						
+						DBObject docDistrito=new BasicDBObject();
+						docDistrito.put("id", dist.getId());
+						docDistrito.put("provincia_id", dist.getProvincia().getId());
+						docDistrito.put("nombre", dist.getNombre());
+						docDistrito.put("poblacion", dist.getPoblacion());
+						
+						colDistritos.insert(docDistrito);
+						
+					}
+					
+					DBObject docProvincia=new BasicDBObject();
+					docProvincia.put("id", prov.getId());
+					docProvincia.put("departamento_id", prov.getDepartamento().getId());
+					docProvincia.put("nombre", prov.getNombre());				
+					
+					colProvincias.insert(docProvincia);
 				}
 				
-				colProvincias.insertOne(docProvincia);
+				DBObject docDepartamento=new BasicDBObject();
+				docDepartamento.put("id", depa.getId());
+				docDepartamento.put("nombre", depa.getNombre());
+				docDepartamento.put("pais_id", depa.getPais().getId());
+							
+				colDepartamentos.insert(docDepartamento);
 			}
 			
-			colDepartamentos.insertOne(docDepartamento);
+			DBObject docPais=new BasicDBObject();
+					
+			Pais pais=obtenerPais(id);
+			
+			docPais.put("id", pais.getId());
+			docPais.put("nombre", pais.getNombre());
+			docPais.put("poblacion", pais.getPoblacion());
+			docPais.put("pbi", pais.getPbi());
+			
+			colPaises.insert(docPais);
+			
+			mongoClient.close();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		
-		Pais pais=obtenerPais(id);
-		Document doc=new Document("id", pais.getId())
-				.append("nombre", pais.getNombre())
-				.append("poblacion", pais.getPoblacion())
-				.append("pbi", pais.getPbi());
-		colPaises.insertOne(doc);
-		
-		mongoClient.close();
 		
 	}
 	

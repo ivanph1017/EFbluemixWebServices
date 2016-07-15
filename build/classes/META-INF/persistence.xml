@@ -6,9 +6,9 @@
 			<property name="javax.persistence.schema-generation.database.action"
 				value="create" />
 			<property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />
-			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://us-cdbr-iron-east-04.cleardb.net/ad_df259bfbd65ee95" />
-			<property name="javax.persistence.jdbc.user" value="bb641e139a9dd8" />
-			<property name="javax.persistence.jdbc.password" value="3cdee3af" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://us-cdbr-iron-east-04.cleardb.net/ad_6a117d705e2eb3d" />
+			<property name="javax.persistence.jdbc.user" value="bb5afc4ae294c6" />
+			<property name="javax.persistence.jdbc.password" value="5b574213" />
 		</properties>
 	</persistence-unit>
 </persistence>
